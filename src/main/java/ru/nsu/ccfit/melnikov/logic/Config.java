@@ -25,12 +25,12 @@ public class Config {
     private Config(){
         k = 4;
         n = 1;
-        m = 2;
-        m1 = 1;
-        zn = 9;
-        thetaX = 0;
-        thetaY = 90;
-        thetaZ = 0;
+        m = 20;
+        m1 = 5;
+        zn = 20;
+        thetaX = 60;
+        thetaY = 45;
+        thetaZ = 60;
     }
 
     public static void setBSpline(BSpline spline){
