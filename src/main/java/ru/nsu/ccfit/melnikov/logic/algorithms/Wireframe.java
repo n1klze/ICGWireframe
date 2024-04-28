@@ -52,6 +52,9 @@ public class Wireframe {
     public void drawModel(){
         double[] prev = null;
         double[] cur = new double[4];
+        double[] cur1 = new double[4];
+        double minZ = 10000000;
+        double maxZ = -10000000;
 
         spline = Config.getBSpline();
         K = Config.getK();
@@ -71,6 +74,9 @@ public class Wireframe {
         for (int i = 0; i < num; i++) {
             for (int j = 0; j < M; j++) {
                 curveCoords[j][i] = evaluateCurvePoint(j, i, M);
+                /*if(curveCoords[j][i][2] < minZ){minZ = curveCoords[j][i][2];}
+                if(curveCoords[j][i][2] > maxZ){maxZ = curveCoords[j][i][2];}*/
+
             }
         }
         for (int i = 0; i < num; i+=N) {
@@ -79,24 +85,58 @@ public class Wireframe {
                 circleCoords[k][j] = evaluateCurvePoint(j, i, M1*M);
             }
         }
-
         double[] resMatr = getTransformMatr();
+
+        for(int j=0; j<M; j++) {
+            for (int i = 0; i < num; i++) {
+                cur1 = MatrixOp.matrixVectorMul(resMatr, curveCoords[j][i], 4);
+                if(cur1[3]!=0) {
+                    cur1[0] = cur1[0] / cur1[3] * width;
+                    cur1[1] = cur1[1] / cur1[3] * height;
+                    cur1[2] /= cur1[3];
+                }
+                if(cur1[2] > maxZ){maxZ = cur1[2];}
+                if(cur1[2] < minZ){minZ = cur1[2];}
+            }
+        }
+
+        for(int j=0; j<K-2; j++) {
+            for (int i = 0; i < M1 * M; i++) {
+                cur1 = MatrixOp.matrixVectorMul(resMatr, circleCoords[j][i], 4);
+
+                if (cur1[3] != 0) {
+                    cur1[0] = cur1[0] / cur1[3] * width;
+                    cur1[1] = cur1[1] / cur1[3] * height;
+                    cur1[2] /= cur1[3];
+                }
+                if(cur1[2] > maxZ){maxZ = cur1[2];}
+                if(cur1[2] < minZ){minZ = cur1[2];}
+            }
+        }
 
         for(int j=0; j<M; j++) {
             prev = null;
             for (int i = 0; i < num; i++) {
                 cur = MatrixOp.matrixVectorMul(resMatr, curveCoords[j][i], 4);
-
                 if(cur[3]!=0) {
                     cur[0] = cur[0] / cur[3] * width;
                     cur[1] = cur[1] / cur[3] * height;
                     cur[2] /= cur[3];
                 }
                 if (prev != null) {
+                    double z = (cur[2] + prev[2]) / 2;
+                    double max = maxZ - minZ;
+                    double min = minZ - minZ;
+                    z = (z - minZ) / max;
+                    int edgeDistance = (int)(z * 255) - 30;
+                    edgeDistance = Math.max(edgeDistance, 0);
+                    int edgeRGB = 0xFF000000 | (255 - edgeDistance << 16) & 0x00FF0000
+                            | (edgeDistance << 8) & 0x00000000 | edgeDistance & 0x000000FF;
+                    Color color = new Color(edgeRGB);
                     ds.drawLine(
                             (int) (prev[0] + width / 2), (int) (prev[1] + height / 2),
                             (int) (cur[0] + width / 2), (int) (cur[1] + height / 2),
-                            Color.BLACK
+                            color
                     );
                 }
                 prev = cur;
@@ -114,20 +154,38 @@ public class Wireframe {
                     cur[2] /= cur[3];
                 }
                 if (prev != null) {
+                    double z = (cur[2] + prev[2]) / 2;
+                    double max = maxZ - minZ;
+                    double min = minZ - minZ;
+                    z = (z - minZ) / max;
+                    int edgeDistance = (int)(z * 255) - 30;
+                    edgeDistance = Math.max(edgeDistance, 0);
+                    int edgeRGB = 0xFF000000 | (255 - edgeDistance << 16) & 0x00FF0000
+                            | (edgeDistance << 8) & 0x00000000 | edgeDistance & 0x000000FF;
+                    Color color = new Color(edgeRGB);
                     ds.drawLine(
                             (int) (prev[0] + width / 2), (int) (prev[1] + height / 2),
                             (int) (cur[0] + width / 2), (int) (cur[1] + height / 2),
-                            Color.BLACK
+                            color
                     );
                 } else {
                     first = cur;
                 }
                 prev = cur;
             }
+            double z = (cur[2] + first[2]) / 2;
+            double max = maxZ - minZ;
+            double min = minZ - minZ;
+            z = (z - minZ) / max;
+            int edgeDistance = (int)(z * 255) - 30;
+            edgeDistance = Math.max(edgeDistance, 0);
+            int edgeRGB = 0xFF000000 | (255 - edgeDistance << 16) & 0x00FF0000
+                    | (edgeDistance << 8) & 0x00000000 | edgeDistance & 0x000000FF;
+            Color color = new Color(edgeRGB);
             ds.drawLine(
                     (int) (cur[0] + width / 2), (int) (cur[1] + height / 2),
                     (int) (first[0] + width / 2), (int) (first[1] + height / 2),
-                    Color.BLACK
+                    color
             );
         }
     }
